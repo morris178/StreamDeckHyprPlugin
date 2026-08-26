@@ -28,6 +28,7 @@ class FakeBackend:
         self.snapshot_calls = 0
         self.closed = False
         self.switched = []
+        self.moved = []
 
     def snapshot(self):
         self.snapshot_calls += 1
@@ -44,6 +45,9 @@ class FakeBackend:
 
     def switch_to_workspace(self, target):
         self.switched.append(target)
+
+    def move_focused_window(self, target, follow=True):
+        self.moved.append((target, follow))
 
     def events(self, stop_event):
         self.stream_calls += 1
@@ -128,6 +132,16 @@ class ServiceTests(unittest.TestCase):
         self.assertEqual(self.backend.switched, [target])
         self.assertEqual(self.service.state.view(target).visual_state, before)
 
+    def test_move_focused_window_is_asynchronous_and_does_not_mutate_state(self):
+        target = WorkspaceTarget.parse("code")
+        before = self.service.state.view(target).signature
+        self.service.move_focused_window(target, follow=True)
+        deadline = time.monotonic() + 1
+        while not self.backend.moved and time.monotonic() < deadline:
+            time.sleep(0.01)
+        self.assertEqual(self.backend.moved, [(target, True)])
+        self.assertEqual(self.service.state.view(target).signature, before)
+
     def test_socket_reconnect_resyncs(self):
         self.service.stop()
         backend = FakeBackend(fail_first_stream=True)
@@ -156,6 +170,20 @@ class TransportTests(unittest.TestCase):
         self.assertIsInstance(transport, FlatpakTransport)
         self.assertEqual(transport._argv("events")[:4], ["flatpak-spawn", "--host", "--watch-bus", "python3"])
 
+    def test_flatpak_move_forwards_target_and_follow_flag(self):
+        transport = FlatpakTransport("/plugin/helper.py")
+        calls = []
+        transport._run_json = lambda *arguments: calls.append(arguments) or {"result": "ok"}  # type: ignore[method-assign]
+        transport.move_focused_window('"name:Web"', follow=True)
+        transport.move_focused_window("3", follow=False)
+        self.assertEqual(
+            calls,
+            [
+                ("move", '"name:Web"', "true"),
+                ("move", "3", "false"),
+            ],
+        )
+
     def test_current_lua_dispatch_syntax_numeric_and_named(self):
         transport = NativeTransport(environ={})
         requests = []
@@ -164,6 +192,21 @@ class TransportTests(unittest.TestCase):
         transport.dispatch_workspace('"name:Web"')
         self.assertEqual(requests[0], "/dispatch hl.dsp.focus({ workspace = 3 })")
         self.assertEqual(requests[1], '/dispatch hl.dsp.focus({ workspace = "name:Web" })')
+
+    def test_current_lua_window_move_syntax_follow_and_silent(self):
+        transport = NativeTransport(environ={})
+        requests = []
+        transport._request = lambda request: requests.append(request) or b"ok"  # type: ignore[method-assign]
+        transport.move_focused_window("3", follow=True)
+        transport.move_focused_window('"name:Web"', follow=False)
+        self.assertEqual(
+            requests[0],
+            "/dispatch hl.dsp.window.move({ workspace = 3, follow = true })",
+        )
+        self.assertEqual(
+            requests[1],
+            '/dispatch hl.dsp.window.move({ workspace = "name:Web", follow = false })',
+        )
 
     def test_backend_rejects_non_current_hyprland(self):
         backend = HyprlandBackend(NativeTransport(environ={}))

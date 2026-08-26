@@ -7,6 +7,7 @@ from GtkHelper.GenerativeUI.ColorButtonRow import ColorButtonRow
 from GtkHelper.GenerativeUI.ComboRow import ComboRow
 from GtkHelper.GenerativeUI.EntryRow import EntryRow
 from GtkHelper.GenerativeUI.ScaleRow import ScaleRow
+from GtkHelper.GenerativeUI.SwitchRow import SwitchRow
 from src.backend.PluginManager.InputBases import KeyAction
 
 import gi
@@ -33,6 +34,8 @@ except ImportError:  # Direct source-tree test import.
 class WorkspaceAction(KeyAction):
     """A Stream Deck key representing one numeric or named Hyprland workspace."""
 
+    follow_setting_subtitle = "actions.workspace.follow-moved-window.subtitle"
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.has_configuration = True
@@ -48,6 +51,13 @@ class WorkspaceAction(KeyAction):
             title="actions.workspace.setting",
             filter_func=lambda value: value.strip(),
             on_change=self._on_workspace_changed,
+        )
+        self.follow_moved_window_row = SwitchRow(
+            action_core=self,
+            var_name="follow_moved_window",
+            default_value=True,
+            title="actions.workspace.follow-moved-window",
+            subtitle=self.follow_setting_subtitle,
         )
         self.background_opacity_row = ScaleRow(
             action_core=self,
@@ -115,20 +125,22 @@ class WorkspaceAction(KeyAction):
             self.on_ready()
 
     def on_key_down(self, _event_data=None) -> None:
+        # Waiting for SHORT_UP versus HOLD_START is necessary to distinguish
+        # navigation from moving the currently focused window.
+        pass
+
+    def on_key_short_up(self, _event_data=None) -> None:
         if self._target is None:
             self.show_error(duration=1)
             return
         self.plugin_base.workspace_service.switch_to_workspace(self._target)
 
+    def on_key_hold_start(self, _event_data=None) -> None:
+        self._move_focused_window()
+
     # StreamController 1.5 passes event data to all KeyAction callbacks while
     # the inherited no-op methods still have parameterless signatures.
     def on_key_up(self, _event_data=None) -> None:
-        pass
-
-    def on_key_short_up(self, _event_data=None) -> None:
-        pass
-
-    def on_key_hold_start(self, _event_data=None) -> None:
         pass
 
     def on_key_hold_stop(self, _event_data=None) -> None:
@@ -150,6 +162,14 @@ class WorkspaceAction(KeyAction):
         self._render_style = WorkspaceRenderStyle.from_settings(self.get_settings())
         if self._last_view is not None:
             self._schedule_render(self._last_view)
+
+    def _move_focused_window(self) -> None:
+        if self._target is None:
+            self.show_error(duration=1)
+            return
+        configured_follow = self.get_settings().get("follow_moved_window", True)
+        follow = configured_follow is not False and str(configured_follow).casefold() != "false"
+        self.plugin_base.workspace_service.move_focused_window(self._target, follow=follow)
 
     def _change_target(self, configured_value: object) -> None:
         try:
@@ -198,3 +218,15 @@ class WorkspaceAction(KeyAction):
             # The action can disappear between scheduling and the GTK callback.
             return False
         return False
+
+
+class MoveFocusedWindowAction(WorkspaceAction):
+    """Move Hyprland's focused window to one workspace and follow by default."""
+
+    follow_setting_subtitle = "actions.move-focused-window.follow-moved-window.subtitle"
+
+    def on_key_short_up(self, _event_data=None) -> None:
+        self._move_focused_window()
+
+    def on_key_hold_start(self, _event_data=None) -> None:
+        self._move_focused_window()

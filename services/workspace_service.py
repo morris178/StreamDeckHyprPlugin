@@ -87,11 +87,34 @@ class WorkspaceService:
     def switch_to_workspace(self, target: WorkspaceTarget) -> None:
         """Dispatch asynchronously; Hyprland events remain the source of truth."""
 
+        self._submit_workspace_command(
+            target,
+            operation="switch to",
+            command=lambda: self.backend.switch_to_workspace(target),
+        )
+
+    def move_focused_window(self, target: WorkspaceTarget, follow: bool = True) -> None:
+        """Move Hyprland's focused window; resulting events update workspace state."""
+
+        self._submit_workspace_command(
+            target,
+            operation="move focused window to",
+            command=lambda: self.backend.move_focused_window(target, follow=follow),
+        )
+
+    def _submit_workspace_command(
+        self,
+        target: WorkspaceTarget,
+        operation: str,
+        command: Callable[[], None],
+    ) -> None:
+        """Serialize IPC commands without ever blocking an action callback."""
+
         def run_command() -> None:
             try:
-                self.backend.switch_to_workspace(target)
+                command()
             except Exception as exc:
-                self.log.warning(f"Could not switch to workspace {target.display_name}: {exc}")
+                self.log.warning(f"Could not {operation} workspace {target.display_name}: {exc}")
                 with self._lock:
                     self._error = str(exc)
                 self._notify_keys({target.key})

@@ -17,6 +17,12 @@ hl.dsp.focus({ workspace = ... })
 The command is sent directly to `.socket.sock`. Numeric workspaces are Lua numbers; named
 workspaces are escaped strings in `name:Name` form.
 
+Focused-window moves use:
+
+```text
+hl.dsp.window.move({ workspace = ..., follow = true })
+```
+
 ## Ownership and data flow
 
 ```text
@@ -88,6 +94,18 @@ notifies subscribers for 2 and 4. Render and icon caches suppress identical work
 events update the internal model but do not render in version 1 because titles are not displayed.
 
 Idle work consists of a blocking socket read; there is no timer or polling loop.
+
+## Command gestures
+
+The single command executor also serializes focused-window moves. A normal Workspace action maps
+`SHORT_UP` to `hl.dsp.focus(...)` and `HOLD_START` to
+`hl.dsp.window.move({ workspace = ..., follow = true })`. Waiting for the resolved gesture is
+important: switching on key-down would change focus before the hold action could move the intended
+window. The dedicated move action invokes the same move method on `SHORT_UP`.
+
+Both native and Flatpak calls return immediately to StreamController while IPC runs in the
+background. Hyprland stays the source of truth; socket2 move and workspace events update the source
+and destination subscribers without an optimistic state change.
 
 ## Visual semantics
 

@@ -89,6 +89,16 @@ def switch(lua_selector: str) -> None:
     emit({"result": result.decode("utf-8", errors="replace").strip()})
 
 
+def move(lua_selector: str, follow: bool) -> None:
+    lua_follow = "true" if follow else "false"
+    result = request(
+        "/dispatch hl.dsp.window.move({ "
+        f"workspace = {lua_selector}, follow = {lua_follow} "
+        "})"
+    )
+    emit({"result": result.decode("utf-8", errors="replace").strip()})
+
+
 def events() -> None:
     signature, instance = discover_instance()
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -218,6 +228,8 @@ def main(argv: list[str]) -> int:
             snapshot()
         elif command == "switch" and len(argv) == 3:
             switch(argv[2])
+        elif command == "move" and len(argv) == 4 and argv[3] in {"true", "false"}:
+            move(argv[2], argv[3] == "true")
         elif command == "events":
             events()
         elif command == "icon" and len(argv) > 2:

@@ -8,6 +8,8 @@ with the applications currently present there.
 
 - one central Hyprland service for every configured key
 - direct Hyprland IPC; no polling and no `hyprctl` dependency
+- short press switches workspace; long press moves the focused window there and follows it
+- separate **Move focused window to workspace** action for dedicated move keys
 - initial `clients`, `workspaces`, and `monitors` JSON snapshot
 - live socket2 updates for workspace, window, focus, title, monitor, and reload events
 - focused / visible / inactive multi-monitor states
@@ -37,6 +39,13 @@ hl.dsp.focus({ workspace = 3 })
 hl.dsp.focus({ workspace = "name:Web" })
 ```
 
+Moving the focused window uses the current Lua window dispatcher:
+
+```text
+hl.dsp.window.move({ workspace = 3, follow = true })
+hl.dsp.window.move({ workspace = "name:Web", follow = true })
+```
+
 ## Installation
 
 The plugin is not published in the StreamController store yet. Clone or place the complete project
@@ -62,6 +71,21 @@ name:Web
 ```
 
 No helper, shell script, service, `hyprctl`, or extra Flatpak permission must be installed manually.
+
+## Key actions
+
+The normal **Hyprland Workspace** key deliberately waits until StreamController distinguishes a
+short from a long press:
+
+- short press: switch to the configured workspace
+- long press: move Hyprland's currently focused window to the configured workspace and follow it
+
+Following is enabled by default, so both gestures end on the workspace represented by the key. It
+can be disabled per action with **Follow moved window** when background placement is preferred.
+
+The separate **Move focused window to workspace** action performs the move on a normal short press.
+It shares the same central service, target parsing, state subscription, rendering, and transport;
+it does not open another socket or start another helper.
 
 ## Flatpak operation
 

@@ -40,6 +40,9 @@ class HyprlandBackend:
     def switch_to_workspace(self, target: WorkspaceTarget) -> None:
         self.transport.dispatch_workspace(target.lua_selector())
 
+    def move_focused_window(self, target: WorkspaceTarget, follow: bool = True) -> None:
+        self.transport.move_focused_window(target.lua_selector(), follow=follow)
+
     def events(self, stop_event: threading.Event) -> Iterator[tuple[str, str]]:
         return self.transport.event_lines(stop_event)
 

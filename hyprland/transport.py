@@ -64,6 +64,10 @@ class HyprlandTransport(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def move_focused_window(self, lua_selector: str, follow: bool = True) -> None:
+        raise NotImplementedError
+
+    @abstractmethod
     def event_lines(self, stop_event: threading.Event) -> Iterator[tuple[str, str]]:
         """Yield ``(instance_signature, raw_event_line)`` tuples until disconnected."""
         raise NotImplementedError
@@ -120,6 +124,17 @@ class NativeTransport(HyprlandTransport):
         result = self._request(request).decode("utf-8", errors="replace").strip()
         if result != "ok":
             raise HyprlandCommandError(result or "Hyprland rejected the workspace dispatcher")
+
+    def move_focused_window(self, lua_selector: str, follow: bool = True) -> None:
+        lua_follow = "true" if follow else "false"
+        request = (
+            "/dispatch hl.dsp.window.move({ "
+            f"workspace = {lua_selector}, follow = {lua_follow} "
+            "})"
+        )
+        result = self._request(request).decode("utf-8", errors="replace").strip()
+        if result != "ok":
+            raise HyprlandCommandError(result or "Hyprland rejected the window move dispatcher")
 
     def event_lines(self, stop_event: threading.Event) -> Iterator[tuple[str, str]]:
         signature, instance_dir = discover_instance(self.environ)
@@ -218,6 +233,11 @@ class FlatpakTransport(HyprlandTransport):
 
     def dispatch_workspace(self, lua_selector: str) -> None:
         result = self._run_json("switch", lua_selector)
+        if result.get("result") != "ok":
+            raise HyprlandCommandError(str(result.get("result") or "dispatcher failed"))
+
+    def move_focused_window(self, lua_selector: str, follow: bool = True) -> None:
+        result = self._run_json("move", lua_selector, "true" if follow else "false")
         if result.get("result") != "ok":
             raise HyprlandCommandError(str(result.get("result") or "dispatcher failed"))
 

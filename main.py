@@ -10,13 +10,70 @@ from src.backend.PluginManager.ActionInputSupport import ActionInputSupport
 from src.backend.PluginManager.PluginBase import PluginBase
 from src.Signals.Signals import AppQuit
 
-from .actions.workspace import WorkspaceAction
+from .actions.workspace import MoveFocusedWindowAction, WorkspaceAction
 from .hyprland.backend import HyprlandBackend
 from .hyprland.transport import FlatpakTransport, select_transport
 from .rendering.workspace_renderer import WorkspaceRenderer
 from .services.icon_resolver import IconResolver
 from .services.render_scheduler import RenderScheduler
 from .services.workspace_service import WorkspaceService
+
+
+def workspace_settings_schema() -> dict:
+    return {
+        "workspace": {
+            "type": "string",
+            "description": "Numeric workspace ID or a named workspace (plain name or name:Name).",
+            "default": "1",
+            "required": True,
+            "example": "3",
+        },
+        "follow_moved_window": {
+            "type": "boolean",
+            "description": "Follow the focused window to its target workspace after moving it.",
+            "default": True,
+        },
+        "background_opacity": {
+            "type": "number",
+            "description": "Opacity of the state-colored key background in percent.",
+            "default": 68,
+            "minimum": 0,
+            "maximum": 100,
+        },
+        "title_color": {
+            "type": "array",
+            "description": "RGBA color of the workspace name or number.",
+            "default": [248, 249, 251, 255],
+        },
+        "title_font": {
+            "type": "string",
+            "description": "Workspace label font family.",
+            "default": "sans",
+            "enum": ["sans", "condensed", "serif", "monospace"],
+        },
+        "title_weight": {
+            "type": "string",
+            "description": "Workspace label font weight.",
+            "default": "bold",
+            "enum": ["regular", "bold"],
+        },
+        "title_size": {
+            "type": "number",
+            "description": "Preferred workspace label size in pixels; long names shrink to fit.",
+            "default": 24,
+            "minimum": 12,
+            "maximum": 34,
+        },
+    }
+
+
+ACTION_SUPPORT = {
+    Input.Key: ActionInputSupport.SUPPORTED,
+    Input.Dial: ActionInputSupport.UNSUPPORTED,
+    Input.Touchscreen: ActionInputSupport.UNSUPPORTED,
+    Input.TouchKey: ActionInputSupport.UNSUPPORTED,
+    Input.Screen: ActionInputSupport.UNSUPPORTED,
+}
 
 
 class HyprlandWorkspacePlugin(PluginBase):
@@ -39,66 +96,37 @@ class HyprlandWorkspacePlugin(PluginBase):
         self.render_scheduler = RenderScheduler(self.workspace_renderer)
         self._stopped = False
 
-        holder = ActionHolder(
+        workspace_holder = ActionHolder(
             plugin_base=self,
             action_core=WorkspaceAction,
             action_id_suffix="Workspace",
             action_name=self.locale_manager.get("actions.workspace.name", "Hyprland Workspace"),
-            description="Switch to and display one Hyprland workspace with live application icons.",
+            description=(
+                "Switch to and display one Hyprland workspace; long press moves the focused window there."
+            ),
             requirements="Hyprland 0.56 or newer using the Lua configuration provider.",
-            settings_schema={
-                "workspace": {
-                    "type": "string",
-                    "description": "Numeric workspace ID or a named workspace (plain name or name:Name).",
-                    "default": "1",
-                    "required": True,
-                    "example": "3",
-                },
-                "background_opacity": {
-                    "type": "number",
-                    "description": "Opacity of the state-colored key background in percent.",
-                    "default": 68,
-                    "minimum": 0,
-                    "maximum": 100,
-                },
-                "title_color": {
-                    "type": "array",
-                    "description": "RGBA color of the workspace name or number.",
-                    "default": [248, 249, 251, 255],
-                },
-                "title_font": {
-                    "type": "string",
-                    "description": "Workspace label font family.",
-                    "default": "sans",
-                    "enum": ["sans", "condensed", "serif", "monospace"],
-                },
-                "title_weight": {
-                    "type": "string",
-                    "description": "Workspace label font weight.",
-                    "default": "bold",
-                    "enum": ["regular", "bold"],
-                },
-                "title_size": {
-                    "type": "number",
-                    "description": "Preferred workspace label size in pixels; long names shrink to fit.",
-                    "default": 24,
-                    "minimum": 12,
-                    "maximum": 34,
-                },
-            },
-            action_support={
-                Input.Key: ActionInputSupport.SUPPORTED,
-                Input.Dial: ActionInputSupport.UNSUPPORTED,
-                Input.Touchscreen: ActionInputSupport.UNSUPPORTED,
-                Input.TouchKey: ActionInputSupport.UNSUPPORTED,
-                Input.Screen: ActionInputSupport.UNSUPPORTED,
-            },
+            settings_schema=workspace_settings_schema(),
+            action_support=ACTION_SUPPORT.copy(),
         )
-        self.add_action_holder(holder)
+        move_window_holder = ActionHolder(
+            plugin_base=self,
+            action_core=MoveFocusedWindowAction,
+            action_id_suffix="MoveFocusedWindow",
+            action_name=self.locale_manager.get(
+                "actions.move-focused-window.name",
+                "Move focused window to workspace",
+            ),
+            description="Move Hyprland's focused window to one workspace and follow it by default.",
+            requirements="Hyprland 0.56 or newer using the Lua configuration provider.",
+            settings_schema=workspace_settings_schema(),
+            action_support=ACTION_SUPPORT.copy(),
+        )
+        self.add_action_holder(workspace_holder)
+        self.add_action_holder(move_window_holder)
         self.register(
             plugin_name=self.locale_manager.get("plugin.name", "Hyprland Workspaces"),
             github_repo="https://github.com/morris178/StreamDeckHyprPlugin",
-            plugin_version="1.3.1",
+            plugin_version="1.4.0",
             app_version="1.5.0-beta.16",
         )
 

@@ -1,7 +1,11 @@
 {
     "plugin.name": "Hyprland Workspaces",
     "actions.workspace.name": "Hyprland Workspace",
+    "actions.move-focused-window.name": "Move focused window to workspace",
     "actions.workspace.setting": "Workspace (ID or name)",
+    "actions.workspace.follow-moved-window": "Follow moved window",
+    "actions.workspace.follow-moved-window.subtitle": "Long press moves the focused window and opens its target workspace",
+    "actions.move-focused-window.follow-moved-window.subtitle": "Moves the focused window and opens its target workspace",
     "actions.workspace.background-opacity": "Background opacity",
     "actions.workspace.background-opacity.subtitle": "Lets the page background shine through",
     "actions.workspace.title-color": "Workspace label color",
