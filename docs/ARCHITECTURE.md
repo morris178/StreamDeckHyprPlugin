@@ -27,7 +27,7 @@ hl.dsp.window.move({ workspace = ..., follow = true })
 
 ```text
 WorkspaceAction(s)
-      │ subscribe / switch
+      │ subscribe / switch / move focused window
       ▼
 WorkspaceService (one per plugin object)
       │

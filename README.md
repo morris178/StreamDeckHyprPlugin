@@ -164,7 +164,8 @@ flatpak run --command=sh com.core447.StreamController \
 ```
 
 Fixtures cover snapshots, event parsing, open/close/move, workspace lifecycle, multiple monitors,
-resync, reconnect, duplicate/unknown events, transport selection, shared subscriptions, icon
+resync, reconnect, duplicate/unknown events, transport selection, short/long-press gestures,
+focused-window move/follow commands, shared subscriptions, icon
 resolution, icon caching, Chromium webapp detection, local PWA/favicon lookup, targeted icon
 refresh, app deduplication, and render caching.
 
