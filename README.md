@@ -2,9 +2,10 @@
 
 # Hyprland Workspaces for StreamController
 
-Event-driven Stream Deck workspace keys for current Hyprland. Each key switches to one numeric or
-named workspace and shows whether it is focused, visible on another monitor, or inactive, together
-with the applications currently present there.
+See your Hyprland workspaces at a glance—right on your Stream Deck. Each key shows the apps currently
+open on that workspace with live-updating icons and indicates whether the workspace is focused,
+visible on another monitor, or inactive. Press a key to switch there, or hold it to move the focused
+window with you.
 
 ## Features
 
