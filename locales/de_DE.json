@@ -1,5 +1,5 @@
 {
     "plugin.name": "Hyprland-Arbeitsflächen",
-    "actions.workspace.name": "Workspace",
+    "actions.workspace.name": "Hyprland-Workspace",
     "actions.workspace.setting": "Workspace (ID oder Name)"
 }

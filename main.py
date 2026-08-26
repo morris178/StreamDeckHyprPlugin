@@ -39,7 +39,7 @@ class HyprlandWorkspacePlugin(PluginBase):
             plugin_base=self,
             action_core=WorkspaceAction,
             action_id_suffix="Workspace",
-            action_name=self.locale_manager.get("actions.workspace.name", "Workspace"),
+            action_name=self.locale_manager.get("actions.workspace.name", "Hyprland Workspace"),
             description="Switch to and display one Hyprland workspace with live application icons.",
             requirements="Hyprland 0.56 or newer using the Lua configuration provider.",
             settings_schema={
@@ -63,7 +63,7 @@ class HyprlandWorkspacePlugin(PluginBase):
         self.register(
             plugin_name=self.locale_manager.get("plugin.name", "Hyprland Workspaces"),
             github_repo="https://github.com/morris178/StreamDeckHyprPlugin",
-            plugin_version="1.0.0",
+            plugin_version="1.0.1",
             app_version="1.5.0-beta.16",
         )
 
