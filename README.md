@@ -7,6 +7,10 @@ open on that workspace with live-updating icons and indicates whether the worksp
 visible on another monitor, or inactive. Press a key to switch there, or hold it to move the focused
 window with you.
 
+Built for [StreamController](https://github.com/StreamController/StreamController) by
+[Core447](https://github.com/Core447). A huge thank-you to him for creating and sharing this amazing
+project.
+
 ## Features
 
 - one central Hyprland service for every configured key
