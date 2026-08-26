@@ -1,3 +1,5 @@
+![Hyprland Workspaces – live workspace controls for StreamController](store/thumbnail.png)
+
 # Hyprland Workspaces for StreamController
 
 Event-driven Stream Deck workspace keys for current Hyprland. Each key switches to one numeric or

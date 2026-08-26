@@ -123,12 +123,7 @@ class HyprlandWorkspacePlugin(PluginBase):
         )
         self.add_action_holder(workspace_holder)
         self.add_action_holder(move_window_holder)
-        self.register(
-            plugin_name=self.locale_manager.get("plugin.name", "Hyprland Workspaces"),
-            github_repo="https://github.com/morris178/StreamDeckHyprPlugin",
-            plugin_version="1.4.0",
-            app_version="1.5.0-beta.16",
-        )
+        self.register(plugin_name=self.locale_manager.get("plugin.name", "Hyprland Workspaces"))
 
         # StreamController has no dedicated public plugin-unload hook yet.
         import globals as gl
