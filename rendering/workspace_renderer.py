@@ -184,10 +184,9 @@ class WorkspaceRenderer:
 
         overflow = max(0, len(groups) - 3) if len(groups) > 4 else 0
         visible_groups = groups[:3] if overflow else groups[:4]
-        tile_count = len(visible_groups) + bool(overflow)
-        layout = self._tile_layout(tile_count)
+        icon_count = len(visible_groups) + bool(overflow)
+        layout = self._icon_layout(icon_count)
         for (x, y, cell), group in zip(layout, visible_groups):
-            self._draw_tile(image, x, y, cell)
             icon = self.icon_resolver.resolve_window(group.window)
             icon_padding = max(2, cell // 11)
             icon.thumbnail((cell - icon_padding * 2, cell - icon_padding * 2), Image.Resampling.LANCZOS)
@@ -196,7 +195,6 @@ class WorkspaceRenderer:
                 self._badge(draw, x + cell - 1, y + cell - 1, str(group.count), accent, cell)
         if overflow:
             x, y, cell = layout[-1]
-            self._draw_tile(image, x, y, cell, outline=accent)
             draw = ImageDraw.Draw(image)
             overflow_font = self._font(max(12, cell // 2), bold=True)
             text = f"+{overflow}"
@@ -209,8 +207,8 @@ class WorkspaceRenderer:
             )
         return image
 
-    def _tile_layout(self, count: int) -> list[tuple[int, int, int]]:
-        """Return adaptive app-tile geometry for one to four distinct apps."""
+    def _icon_layout(self, count: int) -> list[tuple[int, int, int]]:
+        """Return adaptive icon geometry for one to four distinct apps."""
         if count <= 0:
             return []
         width, height = self.size
@@ -237,31 +235,6 @@ class WorkspaceRenderer:
             (start_x + (index % 2) * (cell + gap), start_y + (index // 2) * (cell + gap), cell)
             for index in range(count)
         ]
-
-    @staticmethod
-    def _draw_tile(
-        image: Image.Image,
-        x: int,
-        y: int,
-        cell: int,
-        outline: tuple[int, ...] = (255, 255, 255, 30),
-    ) -> None:
-        overlay = Image.new("RGBA", image.size, (0, 0, 0, 0))
-        overlay_draw = ImageDraw.Draw(overlay)
-        radius = max(4, cell // 5)
-        overlay_draw.rounded_rectangle(
-            (x + 1, y + 2, x + cell, y + cell + 1),
-            radius=radius,
-            fill=(0, 0, 0, 55),
-        )
-        overlay_draw.rounded_rectangle(
-            (x, y, x + cell - 1, y + cell - 1),
-            radius=radius,
-            fill=(7, 10, 14, 118),
-            outline=outline,
-            width=1,
-        )
-        image.alpha_composite(overlay)
 
     def _fit_title(
         self,

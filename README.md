@@ -93,7 +93,8 @@ If the environment signature is absent or stale, the newest valid runtime instan
 - red: Hyprland is unavailable or reconnecting
 
 Apps with multiple windows are shown once with a count badge. More than four distinct apps are
-collapsed to three icons plus `+N`.
+collapsed to three icons plus `+N`. Icons are rendered directly on the workspace background without
+additional cards or frames.
 
 The colored state background is translucent by default, so the StreamController page background
 remains visible. Each Workspace action can set its own background opacity from 0–100%, workspace

@@ -313,11 +313,11 @@ class RendererTests(unittest.TestCase):
         groups = WorkspaceRenderer._group_apps(windows)
         self.assertEqual([(group.identity, group.count) for group in groups], [("firefox", 2), ("kitty", 1)])
 
-    def test_app_tiles_adapt_to_group_count(self):
+    def test_app_icons_adapt_to_group_count(self):
         renderer = WorkspaceRenderer(IconResolver(size=32))
-        single = renderer._tile_layout(1)
-        pair = renderer._tile_layout(2)
-        grid = renderer._tile_layout(4)
+        single = renderer._icon_layout(1)
+        pair = renderer._icon_layout(2)
+        grid = renderer._icon_layout(4)
 
         self.assertEqual((len(single), len(pair), len(grid)), (1, 2, 4))
         self.assertGreater(single[0][2], pair[0][2])
@@ -329,6 +329,35 @@ class RendererTests(unittest.TestCase):
                 self.assertGreaterEqual(y, 0)
                 self.assertLessEqual(x + cell, renderer.size[0])
                 self.assertLessEqual(y + cell, renderer.size[1])
+
+    def test_app_icons_have_no_background_card(self):
+        class TinyIconResolver:
+            @staticmethod
+            def prepare_window(_window):
+                pass
+
+            @staticmethod
+            def cache_token(_window):
+                return "tiny"
+
+            @staticmethod
+            def resolve_window(_window):
+                return Image.new("RGBA", (1, 1), (255, 255, 255, 255))
+
+        renderer = WorkspaceRenderer(TinyIconResolver())
+        view = WorkspaceView(
+            target=WorkspaceTarget.parse("1"),
+            workspace_id=1,
+            name="1",
+            monitor="DP-1",
+            visual_state=WorkspaceVisualState.FOCUSED,
+            windows=(Window("0x1", 1, "1", "kitty", "kitty", "Shell"),),
+        )
+        style = WorkspaceRenderStyle.from_settings({"background_opacity": 37})
+        image = renderer.render(view, style)
+        x, y, _cell = renderer._icon_layout(1)[0]
+        expected = (*PALETTE[WorkspaceVisualState.FOCUSED][0][:3], style.background_alpha)
+        self.assertEqual(image.getpixel((x, y)), expected)
 
     def test_state_rail_uses_workspace_state_accent(self):
         resolver = IconResolver(size=32)
