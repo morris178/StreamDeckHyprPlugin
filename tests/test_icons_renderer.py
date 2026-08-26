@@ -9,7 +9,7 @@ from unittest.mock import patch
 from PIL import Image
 
 from hyprland.models import Window, WorkspaceTarget, WorkspaceView, WorkspaceVisualState
-from rendering.workspace_renderer import WorkspaceRenderer
+from rendering.workspace_renderer import PALETTE, WorkspaceRenderer
 from services.icon_resolver import IconResolver
 
 
@@ -90,6 +90,55 @@ class RendererTests(unittest.TestCase):
         )
         groups = WorkspaceRenderer._group_apps(windows)
         self.assertEqual([(group.identity, group.count) for group in groups], [("firefox", 2), ("kitty", 1)])
+
+    def test_app_tiles_adapt_to_group_count(self):
+        renderer = WorkspaceRenderer(IconResolver(size=32))
+        single = renderer._tile_layout(1)
+        pair = renderer._tile_layout(2)
+        grid = renderer._tile_layout(4)
+
+        self.assertEqual((len(single), len(pair), len(grid)), (1, 2, 4))
+        self.assertGreater(single[0][2], pair[0][2])
+        self.assertGreater(pair[0][2], grid[0][2])
+        for layout in (single, pair, grid):
+            for x, y, cell in layout:
+                self.assertGreater(cell, 0)
+                self.assertGreaterEqual(x, 0)
+                self.assertGreaterEqual(y, 0)
+                self.assertLessEqual(x + cell, renderer.size[0])
+                self.assertLessEqual(y + cell, renderer.size[1])
+
+    def test_state_rail_uses_workspace_state_accent(self):
+        resolver = IconResolver(size=32)
+        resolver._desktop_entries = ()
+        renderer = WorkspaceRenderer(resolver)
+        for state in WorkspaceVisualState:
+            with self.subTest(state=state):
+                view = WorkspaceView(
+                    target=WorkspaceTarget.parse("1"),
+                    workspace_id=1,
+                    name="1",
+                    monitor="DP-1",
+                    visual_state=state,
+                    windows=(),
+                )
+                image = renderer.render(view)
+                self.assertEqual(image.getpixel((48, 4)), PALETTE[state][1])
+
+    def test_empty_workspace_has_no_content_label(self):
+        resolver = IconResolver(size=32)
+        renderer = WorkspaceRenderer(resolver)
+        view = WorkspaceView(
+            target=WorkspaceTarget.parse("2"),
+            workspace_id=2,
+            name="2",
+            monitor="",
+            visual_state=WorkspaceVisualState.INACTIVE,
+            windows=(),
+        )
+        image = renderer.render(view)
+        background = PALETTE[WorkspaceVisualState.INACTIVE][0]
+        self.assertEqual(image.getpixel((48, 62)), background)
 
 
 if __name__ == "__main__":

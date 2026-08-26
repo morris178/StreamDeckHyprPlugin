@@ -63,7 +63,7 @@ class HyprlandWorkspacePlugin(PluginBase):
         self.register(
             plugin_name=self.locale_manager.get("plugin.name", "Hyprland Workspaces"),
             github_repo="https://github.com/morris178/StreamDeckHyprPlugin",
-            plugin_version="1.0.1",
+            plugin_version="1.1.0",
             app_version="1.5.0-beta.16",
         )
 
