@@ -1,0 +1,10 @@
+openwindow>>0xccc,1,kitty,Terminal
+movewindowv2>>0xccc,2,code
+windowtitlev2>>0xccc,Build, logs
+activewindowv2>>0xccc
+closewindow>>0xccc
+workspacev2>>3,3
+focusedmonv2>>DP-2,2
+createworkspacev2>>4,chat
+destroyworkspacev2>>4,chat
+unknownfutureevent>>some,payload

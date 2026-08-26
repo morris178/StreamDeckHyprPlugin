@@ -1,0 +1,21 @@
+{
+    "version": "1.0.0",
+    "author": "morris178",
+    "license": "MIT",
+    "thumbnail": "assets/plugin.svg",
+    "id": "com_morris_HyprlandWorkspaces",
+    "name": "Hyprland Workspaces",
+    "descriptions": {
+        "en_US": "Native, event-driven Hyprland workspace controls with live application icons.",
+        "de_DE": "Native, ereignisgesteuerte Hyprland-Workspace-Tasten mit Live-App-Symbolen."
+    },
+    "short-descriptions": {
+        "en_US": "Live Hyprland workspace keys",
+        "de_DE": "Live-Tasten für Hyprland-Workspaces"
+    },
+    "tags": ["Utility", "Desktop"],
+    "minimum-app-version": "1.5.0-beta.16",
+    "app-version": "1.5.0-beta.16",
+    "description": "Native, event-driven Hyprland workspace controls with live application icons.",
+    "short-description": "Live Hyprland workspace keys"
+}

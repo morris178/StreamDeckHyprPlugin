@@ -1,0 +1,22 @@
+[
+  {
+    "address": "0xaaa",
+    "at": [10, 20],
+    "size": [1200, 800],
+    "workspace": {"id": 1, "name": "1"},
+    "class": "firefox",
+    "initialClass": "firefox",
+    "title": "Documentation",
+    "focusHistoryID": 1
+  },
+  {
+    "address": "0xbbb",
+    "at": [1930, 40],
+    "size": [900, 700],
+    "workspace": {"id": 2, "name": "code"},
+    "class": "code",
+    "initialClass": "Code",
+    "title": "plugin.py",
+    "focusHistoryID": 0
+  }
+]
