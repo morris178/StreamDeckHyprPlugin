@@ -175,6 +175,8 @@ resync, reconnect, duplicate/unknown events, transport selection, short/long-pre
 focused-window move/follow commands, shared subscriptions, icon
 resolution, icon caching, Chromium webapp detection, local PWA/favicon lookup, targeted icon
 refresh, app deduplication, and render caching.
+Page-cache coverage additionally verifies redraws after returning to a cached page, state changes
+received while hidden, cache eviction cleanup, and shared-workspace subscriber isolation.
 
 ## Troubleshooting
 
