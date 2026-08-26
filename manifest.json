@@ -5,7 +5,7 @@
     "minimum-app-version": "1.5.0-beta.16",
     "id": "com_morris_HyprlandWorkspaces",
     "github": "https://github.com/morris178/StreamDeckHyprPlugin",
-    "thumbnail": "store/thumbnail.png",
+    "thumbnail": "store/thumbnail-v2.png",
     "descriptions": {
         "en_US": "Control Hyprland workspaces from your Stream Deck with live workspace states and application icons. Switch workspaces or move the focused window with one press.",
         "de_DE": "Steuere Hyprland-Workspaces mit Live-Status und App-Symbolen über dein Stream Deck. Wechsle den Workspace oder verschiebe das fokussierte Fenster mit einem Tastendruck."

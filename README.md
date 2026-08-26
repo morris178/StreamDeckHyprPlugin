@@ -1,4 +1,4 @@
-![Hyprland Workspaces – live workspace controls for StreamController](store/thumbnail.png)
+![Hyprland Workspaces – live workspace controls for StreamController](store/thumbnail-v2.png)
 
 # Hyprland Workspaces for StreamController
 
