@@ -9,10 +9,10 @@ from PIL import Image
 
 try:
     from ..hyprland.models import WorkspaceView
-    from ..rendering.workspace_renderer import WorkspaceRenderer
+    from ..rendering.workspace_renderer import WorkspaceRenderer, WorkspaceRenderStyle
 except ImportError:  # Direct source-tree test import.
     from hyprland.models import WorkspaceView
-    from rendering.workspace_renderer import WorkspaceRenderer
+    from rendering.workspace_renderer import WorkspaceRenderer, WorkspaceRenderStyle
 
 
 class RenderScheduler:
@@ -23,7 +23,10 @@ class RenderScheduler:
         self.debounce_seconds = debounce_seconds
         self._executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="WorkspaceRender")
         self._lock = threading.Lock()
-        self._latest: dict[object, tuple[WorkspaceView, Callable[[Image.Image, WorkspaceView], None]]] = {}
+        self._latest: dict[
+            object,
+            tuple[WorkspaceView, WorkspaceRenderStyle, Callable[[Image.Image, WorkspaceView], None]],
+        ] = {}
         self._active: set[object] = set()
         self._stopped = False
 
@@ -31,12 +34,13 @@ class RenderScheduler:
         self,
         owner: object,
         view: WorkspaceView,
+        style: WorkspaceRenderStyle,
         callback: Callable[[Image.Image, WorkspaceView], None],
     ) -> None:
         with self._lock:
             if self._stopped:
                 return
-            self._latest[owner] = (view, callback)
+            self._latest[owner] = (view, style, callback)
             if owner in self._active:
                 return
             self._active.add(owner)
@@ -60,8 +64,8 @@ class RenderScheduler:
                 if item is None or self._stopped:
                     self._active.discard(owner)
                     return
-            view, callback = item
-            image = self.renderer.render(view)
+            view, style, callback = item
+            image = self.renderer.render(view, style)
             try:
                 callback(image, view)
             except Exception:

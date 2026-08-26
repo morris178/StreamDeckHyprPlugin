@@ -11,6 +11,8 @@ with the applications currently present there.
 - initial `clients`, `workspaces`, and `monitors` JSON snapshot
 - live socket2 updates for workspace, window, focus, title, monitor, and reload events
 - focused / visible / inactive multi-monitor states
+- translucent state tint with per-key opacity control
+- configurable workspace-label color, font family, weight, and size
 - deduplicated app icons with window-count badges and `+N` overflow
 - freedesktop desktop-entry and icon-theme lookup, including Flatpak exports
 - local PWA/webapp icons for Chromium-family browsers instead of a generic browser icon
@@ -92,6 +94,11 @@ If the environment signature is absent or stale, the newest valid runtime instan
 
 Apps with multiple windows are shown once with a count badge. More than four distinct apps are
 collapsed to three icons plus `+N`.
+
+The colored state background is translucent by default, so the StreamController page background
+remains visible. Each Workspace action can set its own background opacity from 0–100%, workspace
+label color, font family (sans, condensed, serif, or monospace), weight, and preferred size. Long
+workspace names still shrink automatically to fit the key.
 
 ## Webapp icons
 

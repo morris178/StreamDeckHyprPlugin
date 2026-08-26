@@ -1,5 +1,17 @@
 {
     "plugin.name": "Hyprland-Arbeitsflächen",
     "actions.workspace.name": "Hyprland-Workspace",
-    "actions.workspace.setting": "Workspace (ID oder Name)"
+    "actions.workspace.setting": "Workspace (ID oder Name)",
+    "actions.workspace.background-opacity": "Hintergrund-Deckkraft",
+    "actions.workspace.background-opacity.subtitle": "Lässt den Seitenhintergrund durchscheinen",
+    "actions.workspace.title-color": "Farbe der Workspace-Beschriftung",
+    "actions.workspace.title-font": "Schriftart der Workspace-Beschriftung",
+    "actions.workspace.title-weight": "Schriftschnitt der Workspace-Beschriftung",
+    "actions.workspace.title-size": "Größe der Workspace-Beschriftung",
+    "actions.workspace.font.sans": "Sans",
+    "actions.workspace.font.condensed": "Schmal",
+    "actions.workspace.font.serif": "Serif",
+    "actions.workspace.font.monospace": "Monospace",
+    "actions.workspace.font.regular": "Normal",
+    "actions.workspace.font.bold": "Fett"
 }

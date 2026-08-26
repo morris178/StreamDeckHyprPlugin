@@ -1,5 +1,17 @@
 {
     "plugin.name": "Hyprland Workspaces",
     "actions.workspace.name": "Hyprland Workspace",
-    "actions.workspace.setting": "Workspace (ID or name)"
+    "actions.workspace.setting": "Workspace (ID or name)",
+    "actions.workspace.background-opacity": "Background opacity",
+    "actions.workspace.background-opacity.subtitle": "Lets the page background shine through",
+    "actions.workspace.title-color": "Workspace label color",
+    "actions.workspace.title-font": "Workspace label font",
+    "actions.workspace.title-weight": "Workspace label weight",
+    "actions.workspace.title-size": "Workspace label size",
+    "actions.workspace.font.sans": "Sans",
+    "actions.workspace.font.condensed": "Condensed",
+    "actions.workspace.font.serif": "Serif",
+    "actions.workspace.font.monospace": "Monospace",
+    "actions.workspace.font.regular": "Regular",
+    "actions.workspace.font.bold": "Bold"
 }

@@ -14,7 +14,12 @@ from unittest.mock import patch
 from PIL import Image
 
 from hyprland.models import Window, WorkspaceTarget, WorkspaceView, WorkspaceVisualState
-from rendering.workspace_renderer import PALETTE, WorkspaceRenderer
+from rendering.workspace_renderer import (
+    DEFAULT_TITLE_COLOR,
+    PALETTE,
+    WorkspaceRenderer,
+    WorkspaceRenderStyle,
+)
 from services.icon_resolver import IconResolver
 from services.web_app_icons import ChromiumWebAppIconResolver, detect_web_app
 
@@ -254,6 +259,33 @@ class ChromiumWebAppIconTests(unittest.TestCase):
 
 
 class RendererTests(unittest.TestCase):
+    def test_render_style_normalizes_saved_settings(self):
+        style = WorkspaceRenderStyle.from_settings(
+            {
+                "background_opacity": 25,
+                "title_color": [1.0, 0.5, 0.0, 1.0],
+                "title_font": "MONOSPACE",
+                "title_size": 99,
+                "title_weight": "regular",
+            }
+        )
+        self.assertEqual(style.background_alpha, 64)
+        self.assertEqual(style.title_color, (255, 128, 0, 255))
+        self.assertEqual(style.title_font, "monospace")
+        self.assertEqual(style.title_size, 34)
+        self.assertEqual(style.title_weight, "regular")
+
+        fallback = WorkspaceRenderStyle.from_settings(
+            {
+                "background_opacity": "invalid",
+                "title_color": "invalid",
+                "title_font": "comic-sans",
+                "title_weight": "heavy",
+            }
+        )
+        self.assertEqual(fallback, WorkspaceRenderStyle())
+        self.assertEqual(fallback.title_color, DEFAULT_TITLE_COLOR)
+
     def test_render_states_and_cache(self):
         resolver = IconResolver(size=32)
         resolver._desktop_entries = ()
@@ -329,6 +361,46 @@ class RendererTests(unittest.TestCase):
         image = renderer.render(view)
         background = PALETTE[WorkspaceVisualState.INACTIVE][0]
         self.assertEqual(image.getpixel((48, 62)), background)
+
+    def test_background_opacity_is_real_image_alpha(self):
+        resolver = IconResolver(size=32)
+        renderer = WorkspaceRenderer(resolver)
+        view = WorkspaceView(
+            target=WorkspaceTarget.parse("2"),
+            workspace_id=2,
+            name="2",
+            monitor="",
+            visual_state=WorkspaceVisualState.INACTIVE,
+            windows=(),
+        )
+        image = renderer.render(
+            view,
+            WorkspaceRenderStyle.from_settings({"background_opacity": 25}),
+        )
+        self.assertEqual(image.mode, "RGBA")
+        self.assertEqual(image.getpixel((48, 62)), (22, 24, 29, 64))
+
+    def test_per_action_style_participates_in_render_cache(self):
+        resolver = IconResolver(size=32)
+        renderer = WorkspaceRenderer(resolver)
+        view = WorkspaceView(
+            target=WorkspaceTarget.parse("Web"),
+            workspace_id=8,
+            name="Web",
+            monitor="",
+            visual_state=WorkspaceVisualState.INACTIVE,
+            windows=(),
+        )
+        first_style = WorkspaceRenderStyle.from_settings(
+            {"title_color": [255, 80, 40, 255], "title_font": "sans"}
+        )
+        second_style = WorkspaceRenderStyle.from_settings(
+            {"title_color": [40, 180, 255, 255], "title_font": "serif"}
+        )
+        first = renderer.render(view, first_style)
+        second = renderer.render(view, second_style)
+        self.assertNotEqual(first.tobytes(), second.tobytes())
+        self.assertEqual(len(renderer._cache), 2)
 
 
 if __name__ == "__main__":

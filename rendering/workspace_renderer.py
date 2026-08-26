@@ -21,10 +21,70 @@ class AppGroup:
     count: int = 1
 
 
+DEFAULT_BACKGROUND_OPACITY = 68
+DEFAULT_TITLE_COLOR = (248, 249, 251, 255)
+
+
+@dataclass(frozen=True, slots=True)
+class WorkspaceRenderStyle:
+    """Normalized, hashable per-action presentation settings."""
+
+    background_alpha: int = round(DEFAULT_BACKGROUND_OPACITY * 255 / 100)
+    title_color: tuple[int, int, int, int] = DEFAULT_TITLE_COLOR
+    title_font: str = "sans"
+    title_size: int = 24
+    title_weight: str = "bold"
+
+    @classmethod
+    def from_settings(cls, settings: dict | None) -> "WorkspaceRenderStyle":
+        settings = settings or {}
+        opacity = cls._bounded_number(
+            settings.get("background_opacity", DEFAULT_BACKGROUND_OPACITY),
+            DEFAULT_BACKGROUND_OPACITY,
+            0,
+            100,
+        )
+        title_size = round(cls._bounded_number(settings.get("title_size", 24), 24, 12, 34))
+        title_font = str(settings.get("title_font", "sans")).strip().lower()
+        if title_font not in {"sans", "condensed", "serif", "monospace"}:
+            title_font = "sans"
+        title_weight = str(settings.get("title_weight", "bold")).strip().lower()
+        if title_weight not in {"regular", "bold"}:
+            title_weight = "bold"
+        return cls(
+            background_alpha=round(opacity * 255 / 100),
+            title_color=cls._color(settings.get("title_color", DEFAULT_TITLE_COLOR)),
+            title_font=title_font,
+            title_size=title_size,
+            title_weight=title_weight,
+        )
+
+    @staticmethod
+    def _bounded_number(value: object, default: float, minimum: float, maximum: float) -> float:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            number = default
+        return min(maximum, max(minimum, number))
+
+    @staticmethod
+    def _color(value: object) -> tuple[int, int, int, int]:
+        if not isinstance(value, (list, tuple)) or len(value) != 4:
+            return DEFAULT_TITLE_COLOR
+        try:
+            channels = tuple(float(channel) for channel in value)
+        except (TypeError, ValueError):
+            return DEFAULT_TITLE_COLOR
+        # Also tolerate normalized RGBA values written by older/custom widgets.
+        if max(channels) <= 1:
+            channels = tuple(channel * 255 for channel in channels)
+        return tuple(round(min(255, max(0, channel))) for channel in channels)
+
+
 PALETTE = {
-    WorkspaceVisualState.FOCUSED: ((11, 54, 45, 255), (62, 238, 177, 255)),
-    WorkspaceVisualState.VISIBLE: ((20, 42, 69, 255), (91, 170, 255, 255)),
-    WorkspaceVisualState.INACTIVE: ((22, 24, 29, 255), (101, 107, 118, 255)),
+    WorkspaceVisualState.FOCUSED: ((11, 54, 45, 173), (62, 238, 177, 255)),
+    WorkspaceVisualState.VISIBLE: ((20, 42, 69, 173), (91, 170, 255, 255)),
+    WorkspaceVisualState.INACTIVE: ((22, 24, 29, 173), (101, 107, 118, 255)),
 }
 
 OUTLINE = {
@@ -42,7 +102,8 @@ class WorkspaceRenderer:
         self._cache: OrderedDict[tuple, Image.Image] = OrderedDict()
         self._lock = RLock()
 
-    def render(self, view: WorkspaceView) -> Image.Image:
+    def render(self, view: WorkspaceView, style: WorkspaceRenderStyle | None = None) -> Image.Image:
+        style = style or WorkspaceRenderStyle()
         groups = self._group_apps(view.windows)
         for group in groups:
             self.icon_resolver.prepare_window(group.window)
@@ -54,6 +115,7 @@ class WorkspaceRenderer:
             view.visual_state.value,
             view.connected,
             bool(view.error),
+            style,
             tuple(
                 (group.identity, group.count, self.icon_resolver.cache_token(group.window))
                 for group in groups
@@ -64,19 +126,25 @@ class WorkspaceRenderer:
             if cached is not None:
                 self._cache.move_to_end(key)
                 return cached.copy()
-        image = self._render_uncached(view, groups)
+        image = self._render_uncached(view, groups, style)
         with self._lock:
             self._cache[key] = image.copy()
             while len(self._cache) > self.cache_size:
                 self._cache.popitem(last=False)
         return image
 
-    def _render_uncached(self, view: WorkspaceView, groups: list[AppGroup]) -> Image.Image:
+    def _render_uncached(
+        self,
+        view: WorkspaceView,
+        groups: list[AppGroup],
+        style: WorkspaceRenderStyle,
+    ) -> Image.Image:
         width, height = self.size
         background, accent = PALETTE[view.visual_state]
         outline = OUTLINE[view.visual_state]
         if not view.connected or view.error:
-            background, accent, outline = (45, 28, 30, 255), (233, 95, 105, 255), (132, 57, 64, 255)
+            background, accent, outline = (45, 28, 30, 173), (233, 95, 105, 255), (132, 57, 64, 255)
+        background = (*background[:3], style.background_alpha)
         image = Image.new("RGBA", self.size, background)
         draw = ImageDraw.Draw(image)
 
@@ -98,13 +166,13 @@ class WorkspaceRenderer:
         )
 
         title = view.name or view.target.display_name
-        title, title_font = self._fit_title(draw, title, width - 2 * rail_margin)
+        title, title_font = self._fit_title(draw, title, width - 2 * rail_margin, style)
         title_box = draw.textbbox((0, 0), title, font=title_font)
         draw.text(
             (rail_margin, 9 - title_box[1]),
             title,
             font=title_font,
-            fill=(248, 249, 251, 255),
+            fill=style.title_color,
         )
 
         if not view.connected or view.error:
@@ -195,17 +263,27 @@ class WorkspaceRenderer:
         )
         image.alpha_composite(overlay)
 
-    def _fit_title(self, draw: ImageDraw.ImageDraw, title: str, max_width: int):
+    def _fit_title(
+        self,
+        draw: ImageDraw.ImageDraw,
+        title: str,
+        max_width: int,
+        style: WorkspaceRenderStyle,
+    ):
         title = title.strip() or "?"
-        start_size = max(18, self.size[0] // 4)
+        start_size = style.title_size
         minimum_size = max(11, self.size[0] // 8)
         for size in range(start_size, minimum_size - 1, -1):
-            font = self._font(size, bold=True)
+            font = self._font(size, bold=style.title_weight == "bold", family=style.title_font)
             box = draw.textbbox((0, 0), title, font=font)
             if box[2] - box[0] <= max_width:
                 return title, font
 
-        font = self._font(minimum_size, bold=True)
+        font = self._font(
+            minimum_size,
+            bold=style.title_weight == "bold",
+            family=style.title_font,
+        )
         shortened = title
         while len(shortened) > 1:
             shortened = shortened[:-1]
@@ -256,9 +334,18 @@ class WorkspaceRenderer:
         draw.line((width * 0.42, y - 10, width * 0.58, y + 10), fill=accent, width=max(3, width // 24))
 
     @staticmethod
-    def _font(size: int, bold: bool = False):
-        filename = "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf"
-        try:
-            return ImageFont.truetype(filename, size)
-        except OSError:
-            return ImageFont.load_default()
+    def _font(size: int, bold: bool = False, family: str = "sans"):
+        filenames = {
+            "sans": ("DejaVuSans.ttf", "DejaVuSans-Bold.ttf"),
+            "condensed": ("DejaVuSansCondensed.ttf", "DejaVuSansCondensed-Bold.ttf"),
+            "serif": ("DejaVuSerif.ttf", "DejaVuSerif-Bold.ttf"),
+            "monospace": ("DejaVuSansMono.ttf", "DejaVuSansMono-Bold.ttf"),
+        }
+        regular, heavy = filenames.get(family, filenames["sans"])
+        candidates = (heavy if bold else regular, "DejaVuSans-Bold.ttf" if bold else "DejaVuSans.ttf")
+        for filename in candidates:
+            try:
+                return ImageFont.truetype(filename, size)
+            except OSError:
+                continue
+        return ImageFont.load_default()

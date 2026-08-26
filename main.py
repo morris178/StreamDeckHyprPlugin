@@ -53,7 +53,38 @@ class HyprlandWorkspacePlugin(PluginBase):
                     "default": "1",
                     "required": True,
                     "example": "3",
-                }
+                },
+                "background_opacity": {
+                    "type": "number",
+                    "description": "Opacity of the state-colored key background in percent.",
+                    "default": 68,
+                    "minimum": 0,
+                    "maximum": 100,
+                },
+                "title_color": {
+                    "type": "array",
+                    "description": "RGBA color of the workspace name or number.",
+                    "default": [248, 249, 251, 255],
+                },
+                "title_font": {
+                    "type": "string",
+                    "description": "Workspace label font family.",
+                    "default": "sans",
+                    "enum": ["sans", "condensed", "serif", "monospace"],
+                },
+                "title_weight": {
+                    "type": "string",
+                    "description": "Workspace label font weight.",
+                    "default": "bold",
+                    "enum": ["regular", "bold"],
+                },
+                "title_size": {
+                    "type": "number",
+                    "description": "Preferred workspace label size in pixels; long names shrink to fit.",
+                    "default": 24,
+                    "minimum": 12,
+                    "maximum": 34,
+                },
             },
             action_support={
                 Input.Key: ActionInputSupport.SUPPORTED,
@@ -67,7 +98,7 @@ class HyprlandWorkspacePlugin(PluginBase):
         self.register(
             plugin_name=self.locale_manager.get("plugin.name", "Hyprland Workspaces"),
             github_repo="https://github.com/morris178/StreamDeckHyprPlugin",
-            plugin_version="1.2.0",
+            plugin_version="1.3.0",
             app_version="1.5.0-beta.16",
         )
 
