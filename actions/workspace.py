@@ -120,6 +120,20 @@ class WorkspaceAction(KeyAction):
             return
         self.plugin_base.workspace_service.switch_to_workspace(self._target)
 
+    # StreamController 1.5 passes event data to all KeyAction callbacks while
+    # the inherited no-op methods still have parameterless signatures.
+    def on_key_up(self, _event_data=None) -> None:
+        pass
+
+    def on_key_short_up(self, _event_data=None) -> None:
+        pass
+
+    def on_key_hold_start(self, _event_data=None) -> None:
+        pass
+
+    def on_key_hold_stop(self, _event_data=None) -> None:
+        pass
+
     def on_disconnect(self) -> None:
         self._unsubscribe()
         self.plugin_base.render_scheduler.cancel(self)

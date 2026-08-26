@@ -1,5 +1,13 @@
 # Possible StreamController upstream improvements
 
+## KeyAction callback signatures
+
+StreamController 1.5 invokes all default `KeyAction` callbacks with an event-data argument, while
+the inherited `on_key_up`, `on_key_short_up`, `on_key_hold_start`, and `on_key_hold_stop` no-op
+methods accept only `self`. Plugins that do not override every callback therefore log a
+`TypeError` on otherwise unused key events. Aligning the base signatures to
+`def on_key_*(self, event_data=None)` would remove the need for plugin-local compatibility no-ops.
+
 The plugin works with an unmodified StreamController `1.5.0-beta.16`. No core patch is required.
 
 Small public APIs would nevertheless simplify this and similar plugins:
