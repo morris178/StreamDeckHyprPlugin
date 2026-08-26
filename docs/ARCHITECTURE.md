@@ -67,6 +67,16 @@ For icons, the host helper may read the selected icon file and return it as base
 needed because host icon themes and Flatpak export directories are not all reliably visible
 inside the sandbox. Results are cached in the plugin.
 
+Chromium-family webapps use a plugin-local resolver before the generic browser fallback. Exact
+desktop entries and locally installed PWA manifest resources are preferred; URL-style app windows
+then resolve against the read-only per-profile Chromium `Favicons` SQLite database. Chrome,
+Chromium, Brave, Edge, multiple profiles, and Flatpak browser profile locations are considered.
+The database is opened in immutable/read-only mode to avoid contending with the running browser.
+No network favicon service is used. A temporary browser fallback has a bounded cache lifetime so a
+favicon written shortly after `openwindow` can replace it. The shared resolver makes at most three
+backed-off retries (5, 10, and 20 seconds), then targets only subscribed workspaces containing that
+webapp. Retry timers are cancelled during plugin shutdown; this is finite recovery, not polling.
+
 ## Rendering and performance
 
 Socket reads and commands never run on GTK's main thread. App/icon lookup and PIL rendering use
@@ -87,6 +97,8 @@ Idle work consists of a blocking socket read; there is no timer or polling loop.
 
 App entries are deduplicated by normalized `initialClass`/`class`. A badge shows repeated windows.
 The renderer displays four app groups, or three groups plus `+N` overflow when there are more.
+Its render-cache key includes the icon resolver revision, preventing a temporary browser fallback
+from hiding a favicon that becomes available later.
 
 ## Trade-offs
 

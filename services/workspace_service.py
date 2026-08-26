@@ -10,12 +10,12 @@ from typing import TypeAlias
 try:
     from ..hyprland.backend import HyprlandBackend
     from ..hyprland.event_parser import parse_event_line
-    from ..hyprland.models import WorkspaceTarget, WorkspaceView
+    from ..hyprland.models import Window, WorkspaceTarget, WorkspaceView
     from ..hyprland.state import WorkspaceState
 except ImportError:  # Direct source-tree test import.
     from hyprland.backend import HyprlandBackend
     from hyprland.event_parser import parse_event_line
-    from hyprland.models import WorkspaceTarget, WorkspaceView
+    from hyprland.models import Window, WorkspaceTarget, WorkspaceView
     from hyprland.state import WorkspaceState
 
 
@@ -101,6 +101,28 @@ class WorkspaceService:
         except RuntimeError:
             # The service is already shutting down.
             return
+
+    def notify_app_icon_changed(self, window: Window) -> None:
+        """Target only configured workspaces containing the newly resolved app icon."""
+        wanted = self._window_app_tokens(window)
+        if not wanted:
+            return
+        changed: set[str] = set()
+        with self._lock:
+            for key, target in self._targets.items():
+                view = self.state.view(target, self._connected, self._error)
+                if any(wanted & self._window_app_tokens(candidate) for candidate in view.windows):
+                    changed.add(key)
+        if changed:
+            self._notify_keys(changed)
+
+    @staticmethod
+    def _window_app_tokens(window: Window) -> set[str]:
+        return {
+            "".join(character for character in value.casefold() if character.isalnum())
+            for value in (window.initial_class, window.app_class)
+            if value
+        } - {""}
 
     def resync(self) -> set[str]:
         snapshot = self.backend.snapshot()

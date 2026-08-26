@@ -13,6 +13,7 @@ with the applications currently present there.
 - focused / visible / inactive multi-monitor states
 - deduplicated app icons with window-count badges and `+N` overflow
 - freedesktop desktop-entry and icon-theme lookup, including Flatpak exports
+- local PWA/webapp icons for Chromium-family browsers instead of a generic browser icon
 - automatic reconnect with bounded exponential backoff
 - targeted subscriber updates and shared icon/render caches
 - clean socket, thread, executor, and helper-process shutdown
@@ -50,7 +51,7 @@ For the Flatpak default data directory:
 For a source build, use `<StreamController data directory>/plugins/`. A development launch with
 `--data data` therefore uses `data/plugins/`.
 
-Restart StreamController, add the **Workspace** action to a key, and enter either:
+Restart StreamController, add the **Hyprland Workspace** action to a key, and enter either:
 
 ```text
 3
@@ -92,6 +93,21 @@ If the environment signature is absent or stale, the newest valid runtime instan
 Apps with multiple windows are shown once with a count badge. More than four distinct apps are
 collapsed to three icons plus `+N`.
 
+## Webapp icons
+
+Chromium-family app windows are distinguished from ordinary browser windows through their Hyprland
+`class`/`initialClass`. The resolver supports Chrome, Chromium, Brave, and Edge and checks, in order:
+
+1. an exact freedesktop desktop entry,
+2. the locally installed PWA manifest icon,
+3. the browser profile's local `Favicons` database,
+4. the normal browser icon as a temporary fallback.
+
+No website or external favicon service is contacted. Both native StreamController and its Flatpak
+can read these per-user browser files with their existing permissions. If Chromium has not written
+a newly opened webapp's favicon yet, the shared resolver performs three bounded background retries
+and refreshes only workspace keys containing that webapp.
+
 ## Architecture
 
 See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for transport selection, snapshot/event ordering,
@@ -117,7 +133,8 @@ flatpak run --command=sh com.core447.StreamController \
 
 Fixtures cover snapshots, event parsing, open/close/move, workspace lifecycle, multiple monitors,
 resync, reconnect, duplicate/unknown events, transport selection, shared subscriptions, icon
-resolution, icon caching, app deduplication, and render caching.
+resolution, icon caching, Chromium webapp detection, local PWA/favicon lookup, targeted icon
+refresh, app deduplication, and render caching.
 
 ## Troubleshooting
 
@@ -144,6 +161,13 @@ Verify that its `.desktop` entry has an `Icon=` value and preferably `StartupWMC
 Hyprland's `class` or `initialClass`. The resolver also checks desktop IDs, names, executables, and
 Flatpak exports.
 
+**A webapp still uses the browser icon**
+
+The window must have a webapp-specific Hyprland class such as `chrome-chatgpt.com__-Default` or a
+`crx_<app-id>` class. A normal browser class such as `google-chrome` deliberately stays on the
+browser icon because Hyprland does not expose the active tab URL. Newly created app windows may use
+the browser icon briefly while the bounded local retries wait for Chromium to store their favicon.
+
 **A custom key image prevents live rendering**
 
 Remove the user-selected image for that action. StreamController intentionally gives a custom user
@@ -163,6 +187,7 @@ failures are logged once per bounded retry.
 - no geometric mini-layout in version 1; app icons have priority
 - no compatibility layer for pre-0.56 or legacy Hyprland dispatcher syntax
 - desktop entries with no usable icon fall back to a neutral generated icon
+- normal browser windows show the browser icon; Hyprland does not expose per-tab favicons
 
 This project intentionally contains no Omarchy, Quickshell, or other-compositor integration.
 

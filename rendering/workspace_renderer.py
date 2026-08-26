@@ -44,6 +44,8 @@ class WorkspaceRenderer:
 
     def render(self, view: WorkspaceView) -> Image.Image:
         groups = self._group_apps(view.windows)
+        for group in groups:
+            self.icon_resolver.prepare_window(group.window)
         key = (
             self.size,
             view.target.key,
@@ -52,7 +54,10 @@ class WorkspaceRenderer:
             view.visual_state.value,
             view.connected,
             bool(view.error),
-            tuple((group.identity, group.count) for group in groups),
+            tuple(
+                (group.identity, group.count, self.icon_resolver.cache_token(group.window))
+                for group in groups
+            ),
         )
         with self._lock:
             cached = self._cache.get(key)

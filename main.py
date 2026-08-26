@@ -30,7 +30,11 @@ class HyprlandWorkspacePlugin(PluginBase):
         host_loader = None
         if isinstance(self.hyprland_transport, FlatpakTransport):
             host_loader = self.hyprland_transport.load_host_icon
-        self.icon_resolver = IconResolver(host_loader=host_loader, size=48)
+        self.icon_resolver = IconResolver(
+            host_loader=host_loader,
+            size=48,
+            on_icon_updated=self.workspace_service.notify_app_icon_changed,
+        )
         self.workspace_renderer = WorkspaceRenderer(self.icon_resolver)
         self.render_scheduler = RenderScheduler(self.workspace_renderer)
         self._stopped = False
@@ -63,7 +67,7 @@ class HyprlandWorkspacePlugin(PluginBase):
         self.register(
             plugin_name=self.locale_manager.get("plugin.name", "Hyprland Workspaces"),
             github_repo="https://github.com/morris178/StreamDeckHyprPlugin",
-            plugin_version="1.1.0",
+            plugin_version="1.2.0",
             app_version="1.5.0-beta.16",
         )
 
@@ -77,6 +81,7 @@ class HyprlandWorkspacePlugin(PluginBase):
         if self._stopped:
             return
         self._stopped = True
+        self.icon_resolver.stop()
         self.workspace_service.stop()
         self.render_scheduler.stop()
 

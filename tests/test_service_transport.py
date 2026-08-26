@@ -9,7 +9,7 @@ import time
 import unittest
 
 from hyprland.backend import HyprlandBackend
-from hyprland.models import WorkspaceTarget
+from hyprland.models import Window, WorkspaceTarget
 from hyprland.transport import FlatpakTransport, NativeTransport, select_transport
 from services.workspace_service import WorkspaceService
 
@@ -95,6 +95,28 @@ class ServiceTests(unittest.TestCase):
         first.clear(), second.clear()
         self.service.process_event("openwindow>>ccc,1,kitty,Terminal")
         self.assertEqual((len(first), len(second)), (0, 1))
+
+    def test_icon_update_notifies_only_workspaces_containing_app(self):
+        one, two, three = [], [], []
+        self.service.subscribe(WorkspaceTarget.parse("1"), one.append)
+        self.service.subscribe(WorkspaceTarget.parse("code"), two.append)
+        self.service.subscribe(WorkspaceTarget.parse("3"), three.append)
+        self.service.process_event(
+            "openwindow>>webapp,1,chrome-chatgpt.com__-Default,ChatGPT"
+        )
+        one.clear(), two.clear(), three.clear()
+
+        self.service.notify_app_icon_changed(
+            Window(
+                "0xwebapp",
+                1,
+                "1",
+                "chrome-chatgpt.com__-Default",
+                "chrome-chatgpt.com__-Default",
+                "ChatGPT",
+            )
+        )
+        self.assertEqual((len(one), len(two), len(three)), (1, 0, 0))
 
     def test_switch_is_asynchronous_and_does_not_mutate_state(self):
         target = WorkspaceTarget.parse("3")
